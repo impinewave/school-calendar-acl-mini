@@ -94,3 +94,9 @@
 ```bash
 npm i
 node server.js
+
+## What I focused on
+- 일정 데이터(events)와 권한 정책(event_acl)을 분리해 공유 규칙을 DB로 표현했습니다.
+- 조회는 VIEW/EDIT 허용, 수정은 EDIT만 허용하도록 단순한 계층(EDIT ⊇ VIEW)로 설계했습니다.
+- Demo UI는 버튼으로 API를 호출해 권한 시나리오를 빠르게 검증할 수 있게 구성했습니다.
+
