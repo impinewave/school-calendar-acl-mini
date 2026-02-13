@@ -89,6 +89,9 @@
 
 ---
 
+
+<img width="2499" height="1251" alt="image" src="https://github.com/user-attachments/assets/1870191a-611a-4c4c-ae99-6d9c5ae072e6" />
+<img width="2487" height="1284" alt="image" src="https://github.com/user-attachments/assets/25d5deb4-c4fa-46ad-86b3-b678fd07da1c" />
 ## Run
 
 ```bash
@@ -101,8 +104,7 @@ node server.js
 - Demo UI는 버튼으로 API를 호출해 권한 시나리오를 빠르게 검증할 수 있게 구성했습니다.
 
 
-<img width="2499" height="1251" alt="image" src="https://github.com/user-attachments/assets/1870191a-611a-4c4c-ae99-6d9c5ae072e6" />
-<img width="2487" height="1284" alt="image" src="https://github.com/user-attachments/assets/25d5deb4-c4fa-46ad-86b3-b678fd07da1c" />
+
 
 
 
