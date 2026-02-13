@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>School Calendar ACL Mini</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; line-height: 1.4; }
+    .row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; min-width: 320px; flex: 1; }
+    input, select, button, textarea { width: 100%; padding: 10px; margin: 6px 0 12px; border-radius: 8px; border: 1px solid #ccc; }
+    button { cursor: pointer; font-weight: 600; }
+    pre { background: #111; color: #eee; padding: 12px; border-radius: 12px; overflow: auto; max-height: 320px; }
+    .muted { color: #666; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>School Calendar ACL Mini</h1>
+  <p class="muted">
+    Demo UI (no real auth). API 호출은 헤더 <b>x-user-id</b>, <b>x-dept-id</b>, <b>x-org-id</b>로 사용자 컨텍스트를 전달합니다.
+  </p>
+
+  <div class="row">
+    <div class="card">
+      <h2>1 Create Event</h2>
+      <label>Actor Headers</label>
+      <input id="h_user" placeholder="x-user-id" value="1" />
+      <input id="h_dept" placeholder="x-dept-id" value="10" />
+      <input id="h_org" placeholder="x-org-id" value="100" />
+
+      <label>Title</label>
+      <input id="title" value="수업계 회의" />
+
+      <label>Start / End (ISO)</label>
+      <input id="start_at" value="2026-02-12T10:00:00" />
+      <input id="end_at" value="2026-02-12T11:00:00" />
+
+      <label>Type</label>
+      <select id="event_type">
+        <option>PERSONAL</option>
+        <option selected>DEPT</option>
+        <option>ORG</option>
+      </select>
+
+      <label>Share Mode</label>
+      <select id="share_mode">
+        <option selected>ALL</option>
+        <option>ATTENDEES_ONLY</option>
+      </select>
+
+      <button id="btnCreate">Create</button>
+      <div class="muted">생성되면 아래 Output에 event_id가 표시됩니다.</div>
+    </div>
+
+    <div class="card">
+      <h2>2 Add ACL (ALLOW)</h2>
+      <label>Event ID</label>
+      <input id="acl_event_id" placeholder="event_id" value="1" />
+
+      <label>principal_type</label>
+      <select id="principal_type">
+        <option>USER</option>
+        <option selected>DEPT</option>
+        <option>ORG</option>
+      </select>
+
+      <label>principal_id</label>
+      <input id="principal_id" value="10" />
+
+      <label>action</label>
+      <select id="action">
+        <option selected>VIEW</option>
+        <option>EDIT</option>
+      </select>
+
+      <button id="btnAcl">Add ACL</button>
+      <div class="muted">예: DEPT 10에 VIEW 권한 부여</div>
+    </div>
+
+    <div class="card">
+      <h2>3 Get Event</h2>
+      <label>Event ID</label>
+      <input id="get_event_id" placeholder="event_id" value="1" />
+
+      <button id="btnGet">Get</button>
+      <div class="muted">
+        권한 없으면 NO_PERMISSION이 나옵니다.<br/>
+        (예: dept 99로 조회 → 실패 / dept 10으로 조회 → 성공)
+      </div>
+    </div>
+  </div>
+
+  <h2>Output</h2>
+  <pre id="out">{}</pre>
+
+  <script>
+    const out = document.getElementById("out");
+    function headers() {
+      const h = {
+        "content-type": "application/json",
+        "x-user-id": document.getElementById("h_user").value.trim(),
+      };
+      const dept = document.getElementById("h_dept").value.trim();
+      const org = document.getElementById("h_org").value.trim();
+      if (dept) h["x-dept-id"] = dept;
+      if (org) h["x-org-id"] = org;
+      return h;
+    }
+    function show(x) {
+      out.textContent = typeof x === "string" ? x : JSON.stringify(x, null, 2);
+    }
+    async function api(path, opts) {
+      const res = await fetch(path, opts);
+      const text = await res.text();
+      try {
+        const json = JSON.parse(text);
+        return { ok: res.ok, status: res.status, json };
+      } catch {
+        return { ok: res.ok, status: res.status, json: { raw: text } };
+      }
+    }
+
+    document.getElementById("btnCreate").onclick = async () => {
+      const body = {
+        title: document.getElementById("title").value,
+        start_at: document.getElementById("start_at").value,
+        end_at: document.getElementById("end_at").value,
+        event_type: document.getElementById("event_type").value,
+        share_mode: document.getElementById("share_mode").value,
+      };
+      const r = await api("/events", { method: "POST", headers: headers(), body: JSON.stringify(body) });
+      show(r);
+      if (r.ok && r.json && r.json.event_id) {
+        document.getElementById("acl_event_id").value = r.json.event_id;
+        document.getElementById("get_event_id").value = r.json.event_id;
+      }
+    };
+
+    document.getElementById("btnAcl").onclick = async () => {
+      const eventId = document.getElementById("acl_event_id").value.trim();
+      const body = {
+        principal_type: document.getElementById("principal_type").value,
+        principal_id: Number(document.getElementById("principal_id").value),
+        action: document.getElementById("action").value,
+      };
+      const r = await api(`/events/${eventId}/acl`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+      show(r);
+    };
+
+    document.getElementById("btnGet").onclick = async () => {
+      const eventId = document.getElementById("get_event_id").value.trim();
+      const r = await api(`/events/${eventId}`, { method: "GET", headers: headers() });
+      show(r);
+    };
+  </script>
+</body>
+</html>
